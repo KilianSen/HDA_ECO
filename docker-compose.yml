@@ -6,8 +6,14 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./database.db:/app/database.db
-      - ./uploads:/app/uploads
-      - ./DATA0001.TXT:/app/DATA0001.TXT
-      - ./DATAOUT.TXT:/app/DATAOUT.TXT
+      - db:/app/database.db
+      - up:/app/uploads
+      - d1:/app/DATA0001.TXT
+      - do:/app/DATAOUT.TXT
     restart: unless-stopped
+
+volumes:
+  db:
+  up:
+  d1:
+  do:
