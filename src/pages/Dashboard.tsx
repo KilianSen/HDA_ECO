@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { InfoTooltip } from '@/components/InfoTooltip';
 import type { Stats, VehicleStat, DriverStat, Transaction } from '../types';
 
 export function DashboardView({ 
@@ -81,15 +82,39 @@ export function DashboardView({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Global Efficiency" value={`${stats.advanced?.fleet_efficiency || '0'} ${stats.unit_mode === 'hours' ? 'L/h' : 'L/100km'}`} icon={<Zap size={18} />} color="yellow" />
-        <StatCard title="30-Day Forecast" value={`~${stats.advanced?.forecast_next_month || '0'} L`} icon={<TrendingUp size={18} />} color="orange" />
-        <StatCard title="Peak Hour" value={stats.advanced?.peak_hour || 'N/A'} icon={<Clock size={18} />} color="red" />
-        <StatCard title="Busiest Day" value={stats.advanced?.peak_day || 'N/A'} icon={<Activity size={18} />} color="indigo" />
+        <StatCard 
+          title="Global Efficiency" 
+          tooltip="Average fuel consumption across the entire fleet."
+          value={`${stats.advanced?.fleet_efficiency || '0'} ${stats.unit_mode === 'hours' ? 'L/h' : 'L/100km'}`} 
+          icon={<Zap size={18} />} 
+          color="yellow" 
+        />
+        <StatCard 
+          title="30-Day Forecast" 
+          tooltip="Estimated future consumption based on historical daily averages."
+          value={`~${stats.advanced?.forecast_next_month || '0'} L`} 
+          icon={<TrendingUp size={18} />} 
+          color="orange" 
+        />
+        <StatCard 
+          title="Peak Hour" 
+          tooltip="The hour of the day with the highest frequency of transactions."
+          value={stats.advanced?.peak_hour || 'N/A'} 
+          icon={<Clock size={18} />} 
+          color="red" 
+        />
+        <StatCard 
+          title="Busiest Day" 
+          tooltip="The day of the week with the highest frequency of transactions."
+          value={stats.advanced?.peak_day || 'N/A'} 
+          icon={<Activity size={18} />} 
+          color="indigo" 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border border-slate-200 shadow-sm overflow-hidden">
-          <CardHeader className="py-4 px-6 border-b border-slate-100 bg-slate-50/50">
+          <CardHeader className="py-4 px-6 border-b border-slate-100 bg-white">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs font-bold uppercase tracking-widest text-slate-500">
                 {timeframe === 'all' ? 'Historical Monthly Consumption' : 'Daily Trend Analysis'}
@@ -112,7 +137,11 @@ export function DashboardView({
                   dy={10}
                 />
                 <YAxis fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} stroke="#94a3b8" />
-                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)' }} />
+                <Tooltip 
+                  cursor={false} 
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)' }} 
+                  formatter={(value: number) => [`${value.toFixed(2)} L`, 'Amount']}
+                />
                 <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
               </BarChart>
             </ResponsiveContainer>
@@ -120,7 +149,7 @@ export function DashboardView({
         </Card>
 
         <Card className="border border-slate-200 shadow-sm">
-          <CardHeader className="py-4 px-6 border-b border-slate-100 bg-slate-50/50">
+          <CardHeader className="py-4 px-6 border-b border-slate-100 bg-white">
             <CardTitle className="text-xs font-bold uppercase tracking-widest text-slate-500">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -156,7 +185,7 @@ export function DashboardView({
   );
 }
 
-function StatCard({ title, value, icon, color }: { title: string, value: string | number, icon: React.ReactNode, color: 'blue' | 'green' | 'purple' | 'yellow' | 'orange' | 'red' | 'indigo' }) {
+function StatCard({ title, value, icon, color, tooltip }: { title: string, value: string | number, icon: React.ReactNode, color: 'blue' | 'green' | 'purple' | 'yellow' | 'orange' | 'red' | 'indigo', tooltip?: string }) {
   const colors: Record<string, string> = {
     blue: 'text-blue-600 bg-blue-50',
     green: 'text-green-600 bg-green-50',
@@ -170,7 +199,10 @@ function StatCard({ title, value, icon, color }: { title: string, value: string 
     <Card className="border border-slate-200 shadow-sm">
       <CardContent className="p-4 flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium text-slate-500 mb-0.5">{title}</p>
+          <div className="flex items-center gap-1 mb-0.5">
+            <p className="text-xs font-medium text-slate-500">{title}</p>
+            {tooltip && <InfoTooltip content={tooltip} />}
+          </div>
           <div className="text-xl font-bold text-slate-900">{value}</div>
         </div>
         <div className={`p-2 rounded-lg ${colors[color]}`}>

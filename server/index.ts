@@ -98,10 +98,11 @@ app.get('/api/station/deliveries', (req, res) => {
 
 app.post('/api/station/deliveries', (req, res) => {
   const { id, date, amount, notes } = req.body;
+  const roundedAmount = Math.round((amount || 0) * 100) / 100;
   if (id) {
-    db.prepare('UPDATE station_deliveries SET date = ?, amount = ?, notes = ? WHERE id = ?').run(date, amount, notes, id);
+    db.prepare('UPDATE station_deliveries SET date = ?, amount = ?, notes = ? WHERE id = ?').run(date, roundedAmount, notes, id);
   } else {
-    db.prepare('INSERT INTO station_deliveries (date, amount, notes) VALUES (?, ?, ?)').run(date, amount, notes);
+    db.prepare('INSERT INTO station_deliveries (date, amount, notes) VALUES (?, ?, ?)').run(date, roundedAmount, notes);
   }
   res.sendStatus(200);
 });
@@ -160,7 +161,11 @@ app.get('/api/stats', (req, res) => {
         ? (v.total_fuel / v.distance) * 100 
         : v.total_fuel / v.distance;
     }
-    return { ...v, efficiency: efficiency.toFixed(2) };
+    return { 
+      ...v, 
+      total_fuel: Math.round(v.total_fuel * 100) / 100,
+      efficiency: efficiency.toFixed(2) 
+    };
   });
 
   const byDriver = (db.prepare(`
@@ -177,6 +182,7 @@ app.get('/api/stats', (req, res) => {
     LIMIT 10
   `).all(queryParams) as { name: string; pincode: string; total_fuel: number; count: number }[]).map((d) => ({
     ...d,
+    total_fuel: Math.round(d.total_fuel * 100) / 100,
     avg_per_refuel: (d.total_fuel / d.count).toFixed(2)
   }));
 
@@ -205,7 +211,7 @@ app.get('/api/stats', (req, res) => {
   const totalDispensed = db.prepare('SELECT SUM(amount) as total FROM transactions').get() as { total: number };
   const tankCapacity = parseFloat((db.prepare("SELECT value FROM settings WHERE key = 'tank_capacity'").get() as { value: string } | undefined)?.value || '10000');
   
-  const currentLevel = (totalDelivered.total || 0) - (totalDispensed.total || 0);
+  const currentLevel = Math.round(((totalDelivered.total || 0) - (totalDispensed.total || 0)) * 100) / 100;
   const fillPercentage = Math.max(0, Math.min(100, (currentLevel / tankCapacity) * 100));
   
   // Calculate avg daily consumption for days remaining
@@ -275,19 +281,19 @@ app.get('/api/stats', (req, res) => {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   res.json({ 
-    total_fuel: stats.total_fuel || 0,
+    total_fuel: Math.round((stats.total_fuel || 0) * 100) / 100,
     total_transactions: stats.total_transactions || 0,
     total_vehicles: stats.total_vehicles || 0,
     unit_mode: unitMode, 
     by_vehicle: byVehicle, 
     by_driver: byDriver, 
     recent_activity: recentActivity, 
-    by_month: byMonth,
+    by_month: byMonth.map((m: any) => ({ ...m, amount: Math.round(m.amount * 100) / 100 })),
     station: {
       current_level: currentLevel,
       capacity: tankCapacity,
       days_remaining: Math.round(daysRemaining),
-      fill_percentage: fillPercentage
+      fill_percentage: Math.round(fillPercentage * 10) / 10
     },
     advanced: {
       fleet_efficiency: fleet_efficiency.toFixed(2),
@@ -362,19 +368,20 @@ app.get('/api/transactions', (req, res) => {
 
 app.post('/api/transactions', (req, res) => {
   const { id, sequence, pincode, vehicle_id, mileage, amount, product_id, date, time } = req.body;
+  const roundedAmount = Math.round((amount || 0) * 100) / 100;
   if (id) {
     db.prepare(`
       UPDATE transactions SET 
         sequence = ?, pincode = ?, vehicle_id = ?, mileage = ?, 
         amount = ?, product_id = ?, date = ?, time = ?
       WHERE id = ?
-    `).run(sequence, pincode, vehicle_id, mileage, amount, product_id, date, time, id);
+    `).run(sequence, pincode, vehicle_id, mileage, roundedAmount, product_id, date, time, id);
   } else {
     db.prepare(`
       INSERT INTO transactions 
       (sequence, pincode, vehicle_id, mileage, amount, product_id, date, time)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(sequence, pincode, vehicle_id, mileage, amount, product_id, date, time);
+    `).run(sequence, pincode, vehicle_id, mileage, roundedAmount, product_id, date, time);
   }
   res.sendStatus(200);
 });

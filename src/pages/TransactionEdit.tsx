@@ -54,7 +54,7 @@ export function TransactionEditView({ latestDate, fetchData, fetchLatestDate }: 
       </header>
 
       <Card className="border border-slate-200 shadow-sm overflow-hidden">
-        <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+        <CardHeader className="border-b border-slate-100">
           <CardTitle className="text-sm font-semibold text-slate-700">Transaction Details</CardTitle>
           <CardDescription>All fields are required for accurate logging.</CardDescription>
         </CardHeader>

@@ -38,6 +38,7 @@ import { TransactionsView } from './pages/Transactions';
 import { TransactionEditView } from './pages/TransactionEdit';
 import { ManagementView } from './pages/Management';
 import { StationView } from './pages/Station';
+import { TutorialOverlay } from './components/TutorialOverlay';
 import type { Transaction, Stats } from './types';
 
 function App() {
@@ -281,6 +282,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <TutorialOverlay />
       <SidebarProvider>
         <div className="flex min-h-screen w-full bg-slate-50/50">
           <Sidebar collapsible="icon" className="border-r border-slate-200">

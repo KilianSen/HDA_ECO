@@ -62,7 +62,7 @@ export function TransactionsView({
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50/80 border-b border-slate-200 hover:bg-slate-50">
+              <TableRow className="border-b border-slate-200">
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-500 py-4">Timestamp</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-500 py-4">Vehicle Asset</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-500 py-4">Operator Info</TableHead>
@@ -74,7 +74,7 @@ export function TransactionsView({
             <TableBody>
               {transactions.length > 0 ? (
                 transactions.map((t) => (
-                  <TableRow key={t.id} className="hover:bg-slate-50/50 transition-colors group border-slate-100">
+                  <TableRow key={t.id} className="transition-colors group border-slate-100">
                     <TableCell className="py-3">
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-700 text-xs">{t.date.split('-').reverse().join('.')}</span>

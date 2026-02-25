@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FormInput } from '../components/FormInput';
+import { InfoTooltip } from '@/components/InfoTooltip';
 import type { Stats, StationDelivery } from '../types';
 
 export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () => void }) {
@@ -89,12 +90,15 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border border-slate-200 shadow-sm md:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">Current Tank Level</CardTitle>
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">Current Tank Level</CardTitle>
+              <InfoTooltip content="Calculated as: Total Deliveries - Total Transactions recorded in the system." />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between mb-2">
               <div className="text-4xl font-bold text-slate-900">
-                {stats.station?.current_level.toLocaleString()} <span className="text-lg text-slate-400 font-medium">/ {stats.station?.capacity.toLocaleString()} L</span>
+                {stats.station?.current_level.toLocaleString(undefined, { maximumFractionDigits: 1 })} <span className="text-lg text-slate-400 font-medium">/ {stats.station?.capacity.toLocaleString(undefined, { maximumFractionDigits: 1 })} L</span>
               </div>
               <Badge variant={stats.station?.fill_percentage && stats.station.fill_percentage < 20 ? "destructive" : "secondary"} className="text-xs font-bold px-2 py-1">
                 {stats.station?.fill_percentage?.toFixed(1)}% Full
@@ -105,6 +109,7 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
               <div className="flex items-center gap-2">
                 <Droplets size={14} className="text-blue-500" />
                 <span>{stats.station?.days_remaining || 0} Days remaining (est.)</span>
+                <InfoTooltip content="Estimated based on historical daily average consumption." />
               </div>
               {stats.station?.fill_percentage && stats.station.fill_percentage < 10 && (
                 <div className="flex items-center gap-2 text-red-600 font-bold animate-pulse">
@@ -143,7 +148,7 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
       </div>
 
       <Card className="border border-slate-200 shadow-sm">
-        <CardHeader className="bg-slate-50/50 border-b border-slate-100 flex flex-row items-center justify-between">
+        <CardHeader className="bg-white border-b border-slate-100 flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <History size={16} className="text-slate-400" />
             <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">Delivery History</CardTitle>
@@ -168,7 +173,7 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
           )}
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+              <TableRow className="">
                 <TableHead className="w-[150px] text-xs font-bold uppercase text-slate-500">Date</TableHead>
                 <TableHead className="text-xs font-bold uppercase text-slate-500">Amount</TableHead>
                 <TableHead className="text-xs font-bold uppercase text-slate-500">Notes</TableHead>
@@ -178,9 +183,9 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
             <TableBody>
               {deliveries.length > 0 ? (
                 deliveries.map((d) => (
-                  <TableRow key={d.id} className="hover:bg-slate-50">
+                  <TableRow key={d.id} className="">
                     <TableCell className="font-medium text-xs text-slate-700">{d.date}</TableCell>
-                    <TableCell className="font-bold text-xs text-blue-600">+{d.amount.toLocaleString()} L</TableCell>
+                    <TableCell className="font-bold text-xs text-blue-600">+{d.amount.toLocaleString(undefined, { maximumFractionDigits: 1 })} L</TableCell>
                     <TableCell className="text-xs text-slate-500 italic">{d.notes || '-'}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500" onClick={() => deleteDelivery(d.id)}>
