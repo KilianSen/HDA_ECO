@@ -1,27 +1,39 @@
-# Stage 1: Build the frontend
-FROM node:20-alpine AS frontend-builder
+# Stage 1: Build the application
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Install build dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++ 
+
 COPY package*.json ./
 RUN npm ci
+
 COPY . .
 RUN npm run build
 
-# Stage 2: Setup the backend and serve frontend
+# Stage 2: Production environment
 FROM node:20-alpine
 WORKDIR /app
+
+# Install runtime dependencies for better-sqlite3
+# We need to build it for the alpine environment
+RUN apk add --no-cache python3 make g++
+
 COPY package*.json ./
-RUN npm ci --only=production
-COPY --from=frontend-builder /app/dist ./dist
-COPY server ./server
-# Need ts-node or to compile server. For simplicity/speed in this setup, 
-# we'll install ts-node in prod or pre-compile. 
-# Better: compile server TS to JS.
-# Let's install typescript and ts-node for production run or compile.
-# To keep it standard, let's just run with ts-node for now or use a build step for server.
-# Given the package.json, we don't have a server build script. 
-# We'll install ts-node as a dependency or devDependency is fine if we copy node_modules? 
-# No, better to install dependencies.
-RUN npm install typescript ts-node
+RUN npm ci --only=production \
+    && apk del python3 make g++
+
+# Copy built frontend and server
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist-server/server ./server
+
+# Create data and uploads directories and ensure correct permissions
+RUN mkdir -p data uploads && chmod 777 data uploads
 
 EXPOSE 3001
-CMD ["npx", "ts-node", "server/index.ts"]
+ENV NODE_ENV=production
+
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget --quiet --tries=1 --spider http://localhost:3001/api/settings || exit 1
+
+CMD ["node", "server/index.js"]

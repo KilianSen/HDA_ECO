@@ -16,7 +16,13 @@ const port = 3001;
 app.use(cors());
 app.use(express.json());
 
-const db = new Database('database.db');
+// Ensure data directory exists
+const dataDir = path.join(__dirname, '../data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const db = new Database(path.join(dataDir, 'database.db'));
 
 // Initialize database
 db.exec(`
@@ -132,9 +138,9 @@ app.get('/api/stats', (req, res) => {
     ${dateFilter}
   `).get(queryParams) as { total_fuel: number | null; total_transactions: number; total_vehicles: number };
 
-  const unitMode = db.prepare("SELECT value FROM settings WHERE key = 'unit_mode'").get()?.value || 'km';
+  const unitMode = (db.prepare("SELECT value FROM settings WHERE key = 'unit_mode'").get() as { value: string } | undefined)?.value || 'km';
 
-  const byVehicle = db.prepare(`
+  const byVehicle = (db.prepare(`
     SELECT 
       v.name, 
       t.vehicle_id as id, 
@@ -147,7 +153,7 @@ app.get('/api/stats', (req, res) => {
     GROUP BY t.vehicle_id
     ORDER BY total_fuel DESC
     LIMIT 10
-  `).all(queryParams).map((v: { name: string; id: string; total_fuel: number; count: number; distance: number }) => {
+  `).all(queryParams) as { name: string; id: string; total_fuel: number; count: number; distance: number }[]).map((v) => {
     let efficiency = 0;
     if (v.distance > 0) {
       efficiency = unitMode === 'km' 
@@ -157,7 +163,7 @@ app.get('/api/stats', (req, res) => {
     return { ...v, efficiency: efficiency.toFixed(2) };
   });
 
-  const byDriver = db.prepare(`
+  const byDriver = (db.prepare(`
     SELECT 
       d.name, 
       t.pincode, 
@@ -169,7 +175,7 @@ app.get('/api/stats', (req, res) => {
     GROUP BY t.pincode
     ORDER BY total_fuel DESC
     LIMIT 10
-  `).all(queryParams).map((d: { name: string; pincode: string; total_fuel: number; count: number }) => ({
+  `).all(queryParams) as { name: string; pincode: string; total_fuel: number; count: number }[]).map((d) => ({
     ...d,
     avg_per_refuel: (d.total_fuel / d.count).toFixed(2)
   }));
@@ -197,7 +203,7 @@ app.get('/api/stats', (req, res) => {
   // Station Stats
   const totalDelivered = db.prepare('SELECT SUM(amount) as total FROM station_deliveries').get() as { total: number };
   const totalDispensed = db.prepare('SELECT SUM(amount) as total FROM transactions').get() as { total: number };
-  const tankCapacity = parseFloat(db.prepare("SELECT value FROM settings WHERE key = 'tank_capacity'").get()?.value || '10000');
+  const tankCapacity = parseFloat((db.prepare("SELECT value FROM settings WHERE key = 'tank_capacity'").get() as { value: string } | undefined)?.value || '10000');
   
   const currentLevel = (totalDelivered.total || 0) - (totalDispensed.total || 0);
   const fillPercentage = Math.max(0, Math.min(100, (currentLevel / tankCapacity) * 100));
@@ -433,7 +439,7 @@ function processTransactions(lines: string[]) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const transaction = db.transaction((data) => {
+  const transaction = db.transaction((data: string[]) => {
     for (const line of data) {
       if (!line.trim() || !line.startsWith('01,')) continue;
       const parts = line.split(',');
@@ -469,7 +475,7 @@ function processDefinitions(lines: string[]) {
     INSERT OR IGNORE INTO drivers (pincode) VALUES (?)
   `);
 
-  const transaction = db.transaction((data) => {
+  const transaction = db.transaction((data: string[]) => {
     for (const line of data) {
       if (!line.trim() || (!line.startsWith('1,') && !line.startsWith('2,'))) continue;
       const parts = line.split(',');
@@ -514,7 +520,7 @@ app.listen(port, () => {
   const filesToImport = ['DATA0001.TXT', 'DATAOUT.TXT'];
   filesToImport.forEach(file => {
     const filePath = path.resolve(__dirname, '..', file);
-    if (fs.existsSync(filePath)) {
+    if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
       console.log(`Found local ${file}, importing...`);
       processFile(filePath);
     }
