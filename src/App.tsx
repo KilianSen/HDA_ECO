@@ -12,25 +12,21 @@ import {
   TrendingUp,
   List,
   Settings,
-  Github,
-  Warehouse
+  Warehouse,
+  Github
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   SidebarInset,
-  SidebarSeparator,
+  SidebarHeader,
 } from "@/components/ui/sidebar";
 
 import { DashboardView } from './pages/Dashboard';
@@ -40,10 +36,12 @@ import { ManagementView } from './pages/Management';
 import { StationView } from './pages/Station';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import type { Transaction, Stats } from './types';
+import { cn } from '@/lib/utils';
 
 function App() {
+  // ... (keep all state and functions)
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [stats, setStats] = useState<Stats>({ total_fuel: 0, total_transactions: 0, total_vehicles: 0 });
+  const [stats, setStats] = useState<Stats>({ total_fuel: 0, total_cost: 0, total_transactions: 0, total_vehicles: 0 });
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [timeframe, setTimeframe] = useState<'all' | 'today' | 'month' | 'year' | 'custom'>('all');
@@ -52,8 +50,8 @@ function App() {
   const [latestDate, setLatestDate] = useState<string | null>(null);
 
   // Management State
-  const [newVehicle, setNewVehicle] = useState({ id: '', name: '' });
-  const [newDriver, setNewDriver] = useState({ pincode: '', name: '' });
+  const [newVehicle, setNewVehicle] = useState({ id: '', name: '', color: '#3b82f6' });
+  const [newDriver, setNewDriver] = useState({ pincode: '', name: '', color: '#10b981' });
 
   const fetchLatestDate = useCallback(async () => {
     try {
@@ -129,18 +127,18 @@ function App() {
     }
   };
 
-  const saveVehicleName = async (id: string, name: string) => {
+  const saveVehicleName = async (id: string, name: string, color?: string) => {
     try {
-      await axios.post('http://localhost:3001/api/vehicles', { id, name });
+      await axios.post('http://localhost:3001/api/vehicles', { id, name, color });
       fetchData();
     } catch (error) {
       console.error('Error saving vehicle:', error);
     }
   };
 
-  const saveDriverName = async (pincode: string, name: string) => {
+  const saveDriverName = async (pincode: string, name: string, color?: string) => {
     try {
-      await axios.post('http://localhost:3001/api/drivers', { pincode, name });
+      await axios.post('http://localhost:3001/api/drivers', { pincode, name, color });
       fetchData();
     } catch (error) {
       console.error('Error saving driver:', error);
@@ -182,10 +180,6 @@ function App() {
   };
 
   const exportToExcel = () => {
-    // Dynamically import xlsx only when needed to avoid large bundle size if possible, 
-    // but since we are refactoring, we'll keep it simple for now and assume it's imported at top or we can import here.
-    // Ideally we should import at top. Let's assume we import utils and writeFile from 'xlsx' at top.
-    // I need to add that import to the top of this file content.
     import('xlsx').then(({ utils, writeFile }) => {
       const data = transactions.map(t => ({
         'Date': t.date,
@@ -238,7 +232,7 @@ function App() {
     if (!newVehicle.id) return;
     try {
       await axios.post('http://localhost:3001/api/vehicles', newVehicle);
-      setNewVehicle({ id: '', name: '' });
+      setNewVehicle({ id: '', name: '', color: '#3b82f6' });
       fetchData();
     } catch (error) {
       console.error('Error adding vehicle:', error);
@@ -249,7 +243,7 @@ function App() {
     if (!newDriver.pincode) return;
     try {
       await axios.post('http://localhost:3001/api/drivers', newDriver);
-      setNewDriver({ pincode: '', name: '' });
+      setNewDriver({ pincode: '', name: '', color: '#10b981' });
       fetchData();
     } catch (error) {
       console.error('Error adding driver:', error);
@@ -271,122 +265,107 @@ function App() {
   const uniqueVehicles = Array.from(new Set(transactions.map(t => t.vehicle_id)))
     .map(id => ({ 
       id, 
-      name: transactions.find(t => t.vehicle_id === id)?.vehicle_name || '' 
+      name: transactions.find(t => t.vehicle_id === id)?.vehicle_name || '',
+      color: transactions.find(t => t.vehicle_id === id)?.color
     }));
 
   const uniqueDrivers = Array.from(new Set(transactions.map(t => t.pincode)))
     .map(pincode => ({ 
       pincode, 
-      name: transactions.find(t => t.pincode === pincode)?.driver_name || '' 
+      name: transactions.find(t => t.pincode === pincode)?.driver_name || '',
+      color: transactions.find(t => t.pincode === pincode)?.color
     }));
 
   return (
     <BrowserRouter>
       <TutorialOverlay />
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-slate-50/50">
-          <Sidebar collapsible="icon" className="border-r border-slate-200">
-            <SidebarHeader className="h-14 flex items-center px-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-md shadow-blue-200">
-                  <Fuel size={18} />
+      <SidebarProvider style={{ "--sidebar-width": "14rem" } as React.CSSProperties}>
+        <div className="flex h-screen w-full bg-background font-sans antialiased overflow-hidden">
+          <Sidebar collapsible="none" className="border-r bg-muted/30 h-full">
+            <SidebarHeader className="h-16 flex items-center px-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                  <Fuel size={18} strokeWidth={2.5} />
                 </div>
-                <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-                  <span className="font-bold text-slate-900">HDA ECO</span>
-                </div>
+                <span className="font-bold text-base tracking-tight uppercase">HDA ECO</span>
               </div>
             </SidebarHeader>
-            <SidebarContent>
+            <SidebarContent className="px-2 pt-4">
               <SidebarGroup>
-                <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-wider px-4 mb-2">Navigation</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu className="px-2 gap-1">
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild tooltip="Dashboard">
-                        <NavLink to="/dashboard" className={({ isActive }) => isActive ? "bg-slate-100 text-blue-600 font-semibold" : "text-slate-600"}>
-                          <TrendingUp size={18} />
-                          <span>Dashboard</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild tooltip="Station Status">
-                        <NavLink to="/station" className={({ isActive }) => isActive ? "bg-slate-100 text-blue-600 font-semibold" : "text-slate-600"}>
-                          <Warehouse size={18} />
-                          <span>Station Status</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild tooltip="Transactions">
-                        <NavLink to="/transactions" className={({ isActive }) => isActive ? "bg-slate-100 text-blue-600 font-semibold" : "text-slate-600"}>
-                          <List size={18} />
-                          <span>Transactions</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild tooltip="Management">
-                        <NavLink to="/management" className={({ isActive }) => isActive ? "bg-slate-100 text-blue-600 font-semibold" : "text-slate-600"}>
-                          <Settings size={18} />
-                          <span>Management</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-
-              <SidebarSeparator className="mx-4 my-2 opacity-50" />
-
-              <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-                <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-wider px-4 mb-2">Data Operations</SidebarGroupLabel>
-                <SidebarGroupContent className="px-4">
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-                    <input type="file" onChange={handleFileChange} className="hidden" id="file-upload-sidebar" />
-                    {file ? (
-                       <Button 
-                        onClick={handleUpload} 
-                        disabled={loading}
-                        className="w-full h-8 text-[10px] font-bold bg-blue-600 hover:bg-blue-500 rounded-lg shadow-sm"
-                      >
-                        {loading ? 'Processing...' : 'Confirm Upload'}
-                      </Button>
-                    ) : (
-                      <Button 
-                        onClick={() => document.getElementById('file-upload-sidebar')?.click()} 
-                        disabled={loading}
-                        className="w-full h-8 text-[10px] font-bold bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm"
-                      >
-                        One-stop Import
-                      </Button>
-                    )}
-                  </div>
-                </SidebarGroupContent>
+                <SidebarMenu className="gap-1">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/dashboard" className={({ isActive }) => cn("flex items-center gap-3 px-3 py-2 rounded-lg transition-colors", isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted")}>
+                        <TrendingUp size={16} />
+                        <span className="text-[11px] font-black uppercase tracking-wider">Dashboard</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/station" className={({ isActive }) => cn("flex items-center gap-3 px-3 py-2 rounded-lg transition-colors", isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted")}>
+                        <Warehouse size={16} />
+                        <span className="text-[11px] font-black uppercase tracking-wider">Station</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/transactions" className={({ isActive }) => cn("flex items-center gap-3 px-3 py-2 rounded-lg transition-colors", isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted")}>
+                        <List size={16} />
+                        <span className="text-[11px] font-black uppercase tracking-wider">Transactions</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink to="/management" className={({ isActive }) => cn("flex items-center gap-3 px-3 py-2 rounded-lg transition-colors", isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted")}>
+                        <Settings size={16} />
+                        <span className="text-[11px] font-black uppercase tracking-wider">Management</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="p-4 border-t border-slate-100 group-data-[collapsible=icon]:hidden">
-              <div className="flex flex-col gap-2">
-                 <div className="flex items-center gap-2 px-2">
-                    <Badge variant="outline" className="w-full justify-center text-[10px] font-bold text-slate-500 border-slate-200 bg-slate-50">
-                      INTERNAL TOOLING ONLY
-                    </Badge>
-                 </div>
-                 <a 
-                   href="https://github.com/KilianSen" 
-                   target="_blank" 
-                   rel="noopener noreferrer"
-                   className="flex items-center justify-center gap-1 text-[10px] text-slate-400 hover:text-blue-500 transition-colors"
-                 >
-                   <span>Made by KilianSen</span>
-                   <Github size={10} />
-                 </a>
+            <SidebarFooter className="p-4 border-t bg-muted/10 overflow-hidden">
+              <div className="space-y-4 text-center">
+                <input type="file" onChange={handleFileChange} className="hidden" id="file-upload-sidebar" />
+                <Button 
+                  onClick={() => file ? handleUpload() : document.getElementById('file-upload-sidebar')?.click()} 
+                  disabled={loading}
+                  variant={file ? "default" : "outline"}
+                  className="w-full h-10 text-[10px] font-black uppercase tracking-widest"
+                >
+                  {loading ? '...' : file ? 'Confirm' : 'Import'}
+                </Button>
+                
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-destructive/60">
+                      Internal Use Only
+                    </span>
+                    <span className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-40">
+                      v1.0.0
+                    </span>
+                  </div>
+
+                  <a 
+                    href="https://github.com/KilianSen" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest opacity-60 hover:opacity-100"
+                  >
+                    <span>By KilianSen</span>
+                    <Github size={10} />
+                  </a>
+                </div>
               </div>
             </SidebarFooter>
           </Sidebar>
 
-          <SidebarInset className="flex-1 flex flex-col min-w-0 bg-transparent">
-            <main className="flex-1 p-6 md:p-10 overflow-auto">
+          <SidebarInset className="flex-1 bg-background overflow-hidden">
+            <main className="h-full p-8 md:p-12 w-full max-w-screen-2xl mx-auto overflow-y-auto">
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={
@@ -432,12 +411,12 @@ function App() {
                     uniqueVehicles={uniqueVehicles}
                     uniqueDrivers={uniqueDrivers}
                     newVehicle={newVehicle}
-                    setNewVehicle={setNewVehicle}
+                    setNewVehicle={(v) => setNewVehicle({ ...v, color: v.color || '#3b82f6' })}
                     addVehicle={addVehicle}
                     deleteVehicle={deleteVehicle}
                     saveVehicleName={saveVehicleName}
                     newDriver={newDriver}
-                    setNewDriver={setNewDriver}
+                    setNewDriver={(d) => setNewDriver({ ...d, color: d.color || '#10b981' })}
                     addDriver={addDriver}
                     deleteDriver={deleteDriver}
                     saveDriverName={saveDriverName}
