@@ -1,73 +1,83 @@
-# React + TypeScript + Vite
+# HDA ECO - Fleet Management Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+HDA ECO is a comprehensive, local-first fleet management solution designed to track fuel transactions, monitor station inventory, and analyze vehicle and driver performance.
 
-Currently, two official plugins are available:
+![HDA ECO Dashboard](https://via.placeholder.com/1200x600.png?text=HDA+ECO+Dashboard)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Dashboard:** Real-time overview of total fuel consumption, active vehicles, and recent activity.
+- **Advanced Analytics:** 
+  - **Global Efficiency:** Tracks L/100km or L/h across the fleet.
+  - **Forecasting:** Predicts future fuel needs based on consumption trends.
+  - **Operational Peaks:** Identifies peak hours and busiest days.
+- **Station Management:** 
+  - Monitor current tank levels and estimated days remaining.
+  - Log fuel deliveries and manage inventory.
+- **Transactions:** 
+  - Detailed log of all fuel exports.
+  - Support for manual entry and editing of transactions.
+  - Import data from `DATA0001.TXT` files.
+  - Export data to CSV and Excel.
+- **Management:** 
+  - Manage vehicle and driver identities.
+  - Configure system settings (Hours vs. Kilometers).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting Started
 
-## Expanding the ESLint configuration
+### Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js (v20+)
+- npm
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/hda-eco.git
+   cd hda-eco
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+4. Start the backend server (in a separate terminal):
+   ```bash
+   npm run server
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Docker Deployment (Production)
+
+To deploy HDA ECO using Docker:
+
+1. Build and run the container using Docker Compose:
+   ```bash
+   docker-compose up -d --build
+   ```
+
+2. Access the application at `http://localhost:3001`.
+
+The `docker-compose.yml` file is configured to persist your database (`database.db`) and uploaded files.
+
+## License
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+### GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+
+(See full license text in the LICENSE file)
+
+---
+
+**Internal Tooling Only** - Made by [KilianSen](https://github.com/KilianSen)

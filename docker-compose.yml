@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  hda-eco:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./database.db:/app/database.db
+      - ./uploads:/app/uploads
+      - ./DATA0001.TXT:/app/DATA0001.TXT
+      - ./DATAOUT.TXT:/app/DATAOUT.TXT
+    restart: unless-stopped

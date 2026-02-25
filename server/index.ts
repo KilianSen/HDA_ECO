@@ -56,6 +56,14 @@ db.exec(`
   );
 
   INSERT OR IGNORE INTO settings (key, value) VALUES ('unit_mode', 'km');
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('tank_capacity', '10000');
+
+  CREATE TABLE IF NOT EXISTS station_deliveries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT,
+    amount REAL,
+    notes TEXT
+  );
 `);
 
 const upload = multer({ dest: 'uploads/' });
@@ -73,6 +81,27 @@ app.get('/api/settings', (req, res) => {
 app.post('/api/settings', (req, res) => {
   const { key, value } = req.body;
   db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
+  res.sendStatus(200);
+});
+
+// Station Endpoints
+app.get('/api/station/deliveries', (req, res) => {
+  const rows = db.prepare('SELECT * FROM station_deliveries ORDER BY date DESC').all();
+  res.json(rows);
+});
+
+app.post('/api/station/deliveries', (req, res) => {
+  const { id, date, amount, notes } = req.body;
+  if (id) {
+    db.prepare('UPDATE station_deliveries SET date = ?, amount = ?, notes = ? WHERE id = ?').run(date, amount, notes, id);
+  } else {
+    db.prepare('INSERT INTO station_deliveries (date, amount, notes) VALUES (?, ?, ?)').run(date, amount, notes);
+  }
+  res.sendStatus(200);
+});
+
+app.delete('/api/station/deliveries/:id', (req, res) => {
+  db.prepare('DELETE FROM station_deliveries WHERE id = ?').run(req.params.id);
   res.sendStatus(200);
 });
 
@@ -165,6 +194,80 @@ app.get('/api/stats', (req, res) => {
     ORDER BY month DESC
   `).all(queryParams);
 
+  // Station Stats
+  const totalDelivered = db.prepare('SELECT SUM(amount) as total FROM station_deliveries').get() as { total: number };
+  const totalDispensed = db.prepare('SELECT SUM(amount) as total FROM transactions').get() as { total: number };
+  const tankCapacity = parseFloat(db.prepare("SELECT value FROM settings WHERE key = 'tank_capacity'").get()?.value || '10000');
+  
+  const currentLevel = (totalDelivered.total || 0) - (totalDispensed.total || 0);
+  const fillPercentage = Math.max(0, Math.min(100, (currentLevel / tankCapacity) * 100));
+  
+  // Calculate avg daily consumption for days remaining
+  let daysRemaining = 0;
+  if (stats.total_fuel) {
+     const firstDate = db.prepare('SELECT MIN(date) as date FROM transactions').get() as { date: string };
+     if (firstDate.date) {
+        const days = Math.max(1, (new Date().getTime() - new Date(firstDate.date).getTime()) / (1000 * 60 * 60 * 24));
+        const dailyAvg = (totalDispensed.total || 0) / days;
+        if (dailyAvg > 0) {
+          daysRemaining = currentLevel / dailyAvg;
+        }
+     }
+  }
+
+  // Advanced Stats
+  
+  // 1. Fleet Efficiency (Global)
+  const fleetDistanceRows = db.prepare(`
+    SELECT MAX(mileage) - MIN(mileage) as dist
+    FROM transactions
+    ${dateFilter}
+    GROUP BY vehicle_id
+  `).all(queryParams) as { dist: number }[];
+  
+  const totalFleetDistance = fleetDistanceRows.reduce((acc, row) => acc + row.dist, 0);
+  let fleet_efficiency = 0;
+  if (totalFleetDistance > 0 && stats.total_fuel) {
+    fleet_efficiency = unitMode === 'km'
+      ? (stats.total_fuel / totalFleetDistance) * 100
+      : stats.total_fuel / totalFleetDistance;
+  }
+
+  // 2. Forecast
+  let forecast_next_month = 0;
+  if (stats.total_fuel) {
+    const dateRange = db.prepare(`SELECT MIN(date) as first, MAX(date) as last FROM transactions ${dateFilter}`).get(queryParams) as { first: string, last: string };
+    if (dateRange.first && dateRange.last) {
+      const start = new Date(dateRange.first);
+      const end = new Date(dateRange.last);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+      const dailyAvg = stats.total_fuel / diffDays;
+      forecast_next_month = dailyAvg * 30;
+    }
+  }
+
+  // 3. Peak Operational Times
+  const peakHour = db.prepare(`
+    SELECT strftime('%H', time) as hour, COUNT(*) as count 
+    FROM transactions 
+    ${dateFilter}
+    GROUP BY hour 
+    ORDER BY count DESC 
+    LIMIT 1
+  `).get(queryParams) as { hour: string, count: number } | undefined;
+
+  const peakDay = db.prepare(`
+    SELECT strftime('%w', date) as day, COUNT(*) as count 
+    FROM transactions 
+    ${dateFilter}
+    GROUP BY day 
+    ORDER BY count DESC 
+    LIMIT 1
+  `).get(queryParams) as { day: string, count: number } | undefined;
+
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
   res.json({ 
     total_fuel: stats.total_fuel || 0,
     total_transactions: stats.total_transactions || 0,
@@ -173,7 +276,19 @@ app.get('/api/stats', (req, res) => {
     by_vehicle: byVehicle, 
     by_driver: byDriver, 
     recent_activity: recentActivity, 
-    by_month: byMonth 
+    by_month: byMonth,
+    station: {
+      current_level: currentLevel,
+      capacity: tankCapacity,
+      days_remaining: Math.round(daysRemaining),
+      fill_percentage: fillPercentage
+    },
+    advanced: {
+      fleet_efficiency: fleet_efficiency.toFixed(2),
+      forecast_next_month: forecast_next_month.toFixed(1),
+      peak_hour: peakHour?.hour ? `${peakHour.hour}:00` : 'N/A',
+      peak_day: peakDay ? days[parseInt(peakDay.day)] : 'N/A'
+    }
   });
 });
 
@@ -379,6 +494,18 @@ function processDefinitions(lines: string[]) {
 
 // Cleanup invalid data from previous imports
 db.prepare("DELETE FROM transactions WHERE length(date) < 10").run();
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get(/(.*)/, (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 app.listen(port, () => {
   console.log(`Backend listening at http://localhost:${port}`);
