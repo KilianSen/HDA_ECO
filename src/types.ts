@@ -10,27 +10,39 @@ export interface Transaction {
   time: string;
   vehicle_name?: string;
   driver_name?: string;
+  color?: string;
+  cost?: number;
 }
 
 export interface VehicleStat {
   name: string;
   id: string;
   total_fuel: number;
+  total_cost: number;
   count: number;
   efficiency: string;
   distance: number;
+  current_mileage?: number;
+  first_seen?: string;
+  last_seen?: string;
+  color?: string;
 }
 
 export interface DriverStat {
   name: string;
   pincode: string;
   total_fuel: number;
+  total_cost: number;
   count: number;
   avg_per_refuel: string;
+  first_seen?: string;
+  last_seen?: string;
+  color?: string;
 }
 
 export interface Stats {
   total_fuel: number;
+  total_cost: number;
   total_transactions: number;
   total_vehicles: number;
   unit_mode?: 'km' | 'hours';
@@ -49,6 +61,10 @@ export interface Stats {
     capacity: number;
     days_remaining: number;
     fill_percentage: number;
+    fill_history?: { date: string; level: number }[];
+    avg_price: number;
+    total_spend: number;
+    inventory_value: number;
   };
 }
 
@@ -56,5 +72,6 @@ export interface StationDelivery {
   id: number;
   date: string;
   amount: number;
+  price_per_liter?: number;
   notes?: string;
 }
