@@ -591,7 +591,24 @@ app.get(/(.*)/, (req, res) => {
 });
 
 async function start() {
-  await initDb();
+  let authenticated = false;
+  let retries = 5;
+  while (!authenticated && retries > 0) {
+    try {
+      await initDb();
+      authenticated = true;
+    } catch (err) {
+      console.error(`Database connection failed. Retrying... (${retries} left)`);
+      retries -= 1;
+      await new Promise(res => setTimeout(res, 5000)); // Wait 5 seconds
+    }
+  }
+
+  if (!authenticated) {
+    console.error("Could not connect to database. Exiting.");
+    process.exit(1);
+  }
+
   await pool.query("DELETE FROM transactions WHERE LENGTH(date) < 10");
   
   app.listen(port, () => {
