@@ -3,7 +3,7 @@ version: '3.8'
 services:
   hda-eco:
     build: .
-    image: ghcr.io/kiliansen/hda-eco:latest
+    image: ghcr.io/kiliansen/hda_eco:latest
     ports:
       - "3001:3001"
     environment:
