@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  hda-eco:
+    image: hda-eco:latest
+    ports:
+      - "3001:3001"
+    volumes:
+      - db:/app/data
+      - up:/app/uploads
+      # Bind mounts for data files - requires files to exist on the host node
+      - ./DATA0001.TXT:/app/DATA0001.TXT
+      - ./DATAOUT.TXT:/app/DATAOUT.TXT
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+
+volumes:
+  db:
+  up:
+

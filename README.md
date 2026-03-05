@@ -53,18 +53,35 @@ HDA ECO is a comprehensive, local-first fleet management solution designed to tr
    npm run server
    ```
 
-## Docker Deployment (Production)
+## Docker Deployment
 
 To deploy HDA ECO using Docker:
 
-1. Build and run the container using Docker Compose:
+### Using Docker Compose (Single Node)
+To start the application using Docker Compose:
+```bash
+docker-compose up -d
+```
+
+### Using Docker Swarm (Docker Stack)
+To deploy the application as a stack in a Docker Swarm cluster:
+
+1. **Build the image and tag it:**
    ```bash
-   docker-compose up -d --build
+   docker build -t hda-eco:latest .
    ```
 
-2. Access the application at `http://localhost:3001`.
+2. **Initialize Swarm (if not already):**
+   ```bash
+   docker swarm init
+   ```
 
-The `docker-compose.yml` file is configured to persist your database (`database.db`) and uploaded files.
+3. **Deploy the stack:**
+   ```bash
+   docker stack deploy -c docker-stack.yml hda-eco
+   ```
+
+Note: The `docker-stack.yml` uses `replicas: 1` as the SQLite database is stored locally. For high availability, consider using an external database and distributed volumes.
 
 ## License
 
