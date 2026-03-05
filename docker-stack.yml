@@ -5,12 +5,13 @@ services:
     image: hda-eco:latest
     ports:
       - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/hdaeco
     volumes:
-      - db:/app/data
       - up:/app/uploads
-      # Bind mounts for data files - requires files to exist on the host node
-      - ./DATA0001.TXT:/app/DATA0001.TXT
-      - ./DATAOUT.TXT:/app/DATAOUT.TXT
+      # To import local data files, uncomment the lines below:
+      # - ./DATA0001.TXT:/app/DATA0001.TXT
+      # - ./DATAOUT.TXT:/app/DATAOUT.TXT
     deploy:
       replicas: 1
       placement:
@@ -22,8 +23,23 @@ services:
         parallelism: 1
         delay: 10s
         order: stop-first
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=hdaeco
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
 
 volumes:
-  db:
+  pgdata:
   up:
-

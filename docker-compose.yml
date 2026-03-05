@@ -3,13 +3,27 @@ services:
     build: .
     ports:
       - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/hdaeco
     volumes:
-      - db:/app/data
       - up:/app/uploads
-      - ./DATA0001.TXT:/app/DATA0001.TXT
-      - ./DATAOUT.TXT:/app/DATAOUT.TXT
+      # To import local data files, uncomment the lines below:
+      # - ./DATA0001.TXT:/app/DATA0001.TXT
+      # - ./DATAOUT.TXT:/app/DATAOUT.TXT
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=hdaeco
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
-  db:
+  pgdata:
   up:

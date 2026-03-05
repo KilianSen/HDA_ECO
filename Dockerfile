@@ -2,9 +2,6 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install build dependencies for better-sqlite3
-RUN apk add --no-cache python3 make g++ 
-
 COPY package*.json ./
 RUN npm ci
 
@@ -15,13 +12,8 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Install runtime dependencies for better-sqlite3
-# We need to build it for the alpine environment
-RUN apk add --no-cache python3 make g++
-
 COPY package*.json ./
-RUN npm ci --only=production \
-    && apk del python3 make g++
+RUN npm ci --only=production
 
 # Copy built frontend and server
 COPY --from=builder /app/dist ./dist
