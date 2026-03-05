@@ -58,14 +58,14 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
   });
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/station/deliveries')
+    axios.get('/api/station/deliveries')
       .then(res => setDeliveries(res.data))
       .catch(err => console.error('Error fetching deliveries:', err));
   }, [refreshKey]);
 
   const addDelivery = async () => {
     try {
-      await axios.post('http://localhost:3001/api/station/deliveries', newDelivery);
+      await axios.post('/api/station/deliveries', newDelivery);
       setIsAdding(false);
       setNewDelivery({
         date: new Date().toISOString().split('T')[0],
@@ -83,7 +83,7 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
   const deleteDelivery = async (id: number) => {
     if (!confirm('Delete this delivery record?')) return;
     try {
-      await axios.delete(`http://localhost:3001/api/station/deliveries/${id}`);
+      await axios.delete(`/api/station/deliveries/${id}`);
       setRefreshKey(k => k + 1);
       fetchData();
     } catch (error) {
@@ -94,7 +94,7 @@ export function StationView({ stats, fetchData }: { stats: Stats, fetchData: () 
   const updateCapacity = async () => {
     const newCap = prompt("Enter new total tank capacity (L):", stats.station?.capacity.toString());
     if (newCap && !isNaN(parseFloat(newCap))) {
-      await axios.post('http://localhost:3001/api/settings', { key: 'tank_capacity', value: newCap });
+      await axios.post('/api/settings', { key: 'tank_capacity', value: newCap });
       fetchData();
     }
   };

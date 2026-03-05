@@ -22,7 +22,7 @@ export function TransactionEditView({ latestDate, fetchData, fetchLatestDate }: 
 
   useEffect(() => {
     if (id) {
-      axios.get(`http://localhost:3001/api/transactions?limit=1000`).then(res => {
+      axios.get(`/api/transactions?limit=1000`).then(res => {
         const t = res.data.find((item: Transaction) => item.id === parseInt(id));
         if (t) setForm(t);
       });
@@ -31,7 +31,7 @@ export function TransactionEditView({ latestDate, fetchData, fetchLatestDate }: 
 
   const save = async () => {
     try {
-      await axios.post('http://localhost:3001/api/transactions', form);
+      await axios.post('/api/transactions', form);
       await fetchLatestDate();
       fetchData();
       navigate('/transactions');

@@ -55,7 +55,7 @@ function App() {
 
   const fetchLatestDate = useCallback(async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/transactions?limit=1');
+      const res = await axios.get('/api/transactions?limit=1');
       if (res.data && res.data.length > 0) {
         setLatestDate(res.data[0].date);
       }
@@ -87,8 +87,8 @@ function App() {
       }
 
       const [filteredTransRes, statsRes] = await Promise.all([
-        axios.get('http://localhost:3001/api/transactions', { params }),
-        axios.get('http://localhost:3001/api/stats', { params })
+        axios.get('/api/transactions', { params }),
+        axios.get('/api/stats', { params })
       ]);
       setTransactions(filteredTransRes.data);
       setStats(statsRes.data);
@@ -114,7 +114,7 @@ function App() {
     formData.append('file', file);
 
     try {
-      await axios.post('http://localhost:3001/api/upload', formData);
+      await axios.post('/api/upload', formData);
       setFile(null);
       const input = document.getElementById('file-upload-sidebar') as HTMLInputElement;
       if (input) input.value = '';
@@ -129,7 +129,7 @@ function App() {
 
   const saveVehicleName = async (id: string, name: string, color?: string) => {
     try {
-      await axios.post('http://localhost:3001/api/vehicles', { id, name, color });
+      await axios.post('/api/vehicles', { id, name, color });
       fetchData();
     } catch (error) {
       console.error('Error saving vehicle:', error);
@@ -138,7 +138,7 @@ function App() {
 
   const saveDriverName = async (pincode: string, name: string, color?: string) => {
     try {
-      await axios.post('http://localhost:3001/api/drivers', { pincode, name, color });
+      await axios.post('/api/drivers', { pincode, name, color });
       fetchData();
     } catch (error) {
       console.error('Error saving driver:', error);
@@ -148,7 +148,7 @@ function App() {
   const toggleUnitMode = async () => {
     const newMode = stats.unit_mode === 'hours' ? 'km' : 'hours';
     try {
-      await axios.post('http://localhost:3001/api/settings', { key: 'unit_mode', value: newMode });
+      await axios.post('/api/settings', { key: 'unit_mode', value: newMode });
       fetchData();
     } catch (error) {
       console.error('Error toggling unit mode:', error);
@@ -201,7 +201,7 @@ function App() {
   const deleteTransaction = async (id: number) => {
     if (!confirm('Delete this transaction?')) return;
     try {
-      await axios.delete(`http://localhost:3001/api/transactions/${id}`);
+      await axios.delete(`/api/transactions/${id}`);
       fetchData();
     } catch (error) {
       console.error('Error deleting transaction:', error);
@@ -211,7 +211,7 @@ function App() {
   const deleteVehicle = async (id: string) => {
     if (!confirm(`Delete vehicle ${id}?`)) return;
     try {
-      await axios.delete(`http://localhost:3001/api/vehicles/${id}`);
+      await axios.delete(`/api/vehicles/${id}`);
       fetchData();
     } catch (error) {
       console.error('Error deleting vehicle:', error);
@@ -221,7 +221,7 @@ function App() {
   const deleteDriver = async (pincode: string) => {
     if (!confirm(`Delete driver with PIN ${pincode}?`)) return;
     try {
-      await axios.delete(`http://localhost:3001/api/drivers/${pincode}`);
+      await axios.delete(`/api/drivers/${pincode}`);
       fetchData();
     } catch (error) {
       console.error('Error deleting driver:', error);
@@ -231,7 +231,7 @@ function App() {
   const addVehicle = async () => {
     if (!newVehicle.id) return;
     try {
-      await axios.post('http://localhost:3001/api/vehicles', newVehicle);
+      await axios.post('/api/vehicles', newVehicle);
       setNewVehicle({ id: '', name: '', color: '#3b82f6' });
       fetchData();
     } catch (error) {
@@ -242,7 +242,7 @@ function App() {
   const addDriver = async () => {
     if (!newDriver.pincode) return;
     try {
-      await axios.post('http://localhost:3001/api/drivers', newDriver);
+      await axios.post('/api/drivers', newDriver);
       setNewDriver({ pincode: '', name: '', color: '#10b981' });
       fetchData();
     } catch (error) {
