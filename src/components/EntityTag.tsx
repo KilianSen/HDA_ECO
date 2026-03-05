@@ -4,8 +4,7 @@ import {
   HoverCardContent, 
   HoverCardTrigger 
 } from '@/components/ui/hover-card';
-import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Car, 
   User, 
   Calendar, 
@@ -15,7 +14,6 @@ import {
   Euro,
   Gauge
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { VehicleStat, DriverStat } from '../types';
 
 interface EntityTagProps {
