@@ -81,6 +81,21 @@ To deploy the application as a stack in a Docker Swarm cluster:
    docker stack deploy -c docker-stack.yml hda-eco
    ```
 
+## CI/CD - GitHub Actions
+
+The project includes a GitHub Action to automatically build and publish the Docker image to GitHub Container Registry (GHCR).
+
+- **Triggers**: On every push to `main`/`master` and on new release tags (`v*.*.*`).
+- **Image Name**: `ghcr.io/yourusername/hda-eco:latest` (or the specific tag).
+
+To use the published image in your `docker-stack.yml`, update the `image` field:
+```yaml
+services:
+  hda-eco:
+    image: ghcr.io/<your-github-username>/hda-eco:latest
+    # ...
+```
+
 Note: The `docker-stack.yml` uses `replicas: 1` as the SQLite database is stored locally. For high availability, consider using an external database and distributed volumes.
 
 ## License
